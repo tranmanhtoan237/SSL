@@ -1,0 +1,39 @@
+# ssl 적용 버전
+version: '3.8'
+
+services:
+  adamsapgw:
+    image: adamsapgw:latest
+    container_name: adamsapgw
+    ports:
+      - "33333:10000"  # 호스트 포트 8080을 컨테이너의 8080 포트에 매핑
+    volumes:
+      - ${accesslog}:/var/log/envoy/access.log  # 볼륨 매핑
+      #- ${gwconfig}:/etc/envoy/envoy_ssl.yaml  # 볼륨 매핑
+      - ${servercrt}:/etc/envoy/certs/server.crt  # 볼륨 매핑
+      - ${serverkey}:/etc/envoy/certs/server.key  # 볼륨 매핑
+      - ${serverca}:/etc/envoy/certs/ca.crt  # 볼륨 매핑
+    environment:
+      - USE_TLS=Y
+      - VALID_MODELS=HMDL0001,HMDL0002,HMDL0003,HX20001  # 환경 변수 설정
+      - SERVICE_IP=192.168.0.55
+      - SERVICE_PORT=28080
+    networks:
+      - app_network
+    depends_on:
+      - keymanager
+
+  keymanager:
+    image: keymanager:latest
+    container_name: keymanager
+    ports:
+      - "28080:28080"  # 호스트 포트 8081을 컨테이너의 8081 포트에 매핑
+    volumes:
+      - ${keymanagerlog}:/logs  # 볼륨 매핑
+      - ${sql}:/sql/schema.sql # 볼륨 매핑
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
